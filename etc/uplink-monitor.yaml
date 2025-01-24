@@ -1,0 +1,12 @@
+interfaces:
+  primary: wan.101
+  secondary: wan.667
+monitor:
+  targets: ['1.1.1.1', '8.8.8.8', '9.9.9.9']
+  fail: 3
+  recover: 30
+sms:
+  modem: 192.168.5.300
+  password: hunter2
+  recipients:
+    - 555007
