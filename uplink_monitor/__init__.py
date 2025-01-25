@@ -109,13 +109,13 @@ class UplinkMonitor:
                     try:
                         await p
                     except asyncio.CancelledError:
-                        logger.info(f"{tasks[p]} got asyncio.CancelledError")
+                        logger.debug(f"{tasks[p]} got asyncio.CancelledError")
                         pass
                     except Exception as exc:
-                        logger.info(f"{tasks[p]} got exception {exc}")
+                        logger.debug(f"{tasks[p]} got exception {exc}")
                         pass
                 else:
-                    logger.info(f"Cancelling of {[tasks[p]]} failed")
+                    logger.debug(f"Cancelling of {[tasks[p]]} failed")
 
         logger.debug(f"Ping success = {ok}")
         return ok
