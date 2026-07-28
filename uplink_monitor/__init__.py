@@ -85,13 +85,13 @@ class UplinkMonitor:
 
     async def failover(self):
         logger.warning("Failover")
-        await self.run('ip', 'route', 'add', 'default', 'dev', self.config['interfaces']['secondary'].encode(), 'metric', '1')
+        await self.run('ifmetric', self.config['interfaces']['secondary'].encode(), '1')
         await self.run('conntrack', '-F')
         self.failed = True
 
     async def failback(self):
         logger.warning("Failback")
-        await self.run('ip', 'route', 'del', 'default', 'dev', self.config['interfaces']['secondary'].encode(), 'metric', '1')
+        await self.run('ifmetric', self.config['interfaces']['secondary'].encode(), '1000')
         self.failed = False
 
     async def ping(self, ips):
