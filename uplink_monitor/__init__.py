@@ -11,6 +11,10 @@ import aiohttp
 import aioping
 import eternalegypt
 
+from huawei_lte_api.Client import Client
+from huawei_lte_api.Connection import Connection
+from huawei_lte_api.enums.client import ResponseEnum
+
 logger = logging.getLogger(__name__)
 
 class UplinkMonitor:
@@ -47,24 +51,37 @@ class UplinkMonitor:
         self.tasks.add(task)
         task.add_done_callback(self.tasks.discard)
 
+    async def netgear_sms(self, sms, message):
+        try:
+            logger.info(f"Sending text message via {sms['modem']}")
+            jar = aiohttp.CookieJar(unsafe=True)
+            websession = aiohttp.ClientSession(cookie_jar=jar)
+
+            modem = eternalegypt.Modem(hostname=sms['modem'], websession=websession)
+            await modem.login(password=sms['password'])
+
+            for target in sms['recipients']:
+                await modem.sms(phone=target, message=message)
+
+            await modem.logout()
+            await websession.close()
+        except eternalegypt.eternalegypt.Error as ex:
+            logger.warning(f"Sending failed: {ex}")
+
+    def huawei_sms(self, sms, message):
+        with Connection(f"http://{sms['modem']}", password=sms['password']) as connection:
+            client = Client(connection)
+            result = client.sms.send_sms(sms['recipients'], message)
+            if result != ResponseEnum.OK.value:
+                logger.warning(f"Sending failed: {result}")
+
     async def sms(self, message):
         if sms := self.config.get('sms'):
-            try:
-                logger.info(f"Sending text message via {sms['modem']}")
-                jar = aiohttp.CookieJar(unsafe=True)
-                websession = aiohttp.ClientSession(cookie_jar=jar)
-
-                modem = eternalegypt.Modem(hostname=sms['modem'], websession=websession)
-                await modem.login(password=sms['password'])
-
-                for target in sms['recipients']:
-                    await modem.sms(phone=target, message=message)
-
-                await modem.logout()
-                await websession.close()
-            except eternalegypt.eternalegypt.Error as ex:
-                logger.warning(f"Sending failed: {ex}")
-
+            api = sms.get('api', 'eternalegypt')
+            if api == 'eternalegypt':
+                await self.netgear_sms(sms, message)
+            elif api == 'huawei-lte-api':
+                await asyncio.to_thread(self.huawei_sms, sms, message)
 
     async def failover(self):
         logger.warning("Failover")

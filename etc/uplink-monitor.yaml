@@ -6,6 +6,7 @@ monitor:
   fail: 3
   recover: 30
 sms:
+  api: huawei-lte-api
   modem: 192.168.5.300
   password: hunter2
   recipients:
